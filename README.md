@@ -494,6 +494,8 @@ make validate-config
 
 [MIT License](LICENSE)
 
+Copyright (c) 2025 Scott Friedman
+
 ## Support
 
 - GitHub Issues: [Report bugs and request features](https://github.com/scttfrdmn/aws-slurm-burst-advisor/issues)
