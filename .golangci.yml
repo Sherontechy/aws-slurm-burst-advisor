@@ -1,0 +1,110 @@
+run:
+  timeout: 5m
+  issues-exit-code: 1
+  tests: true
+  modules-download-mode: readonly
+
+output:
+  format: colored-line-number
+  print-issued-lines: true
+  print-linter-name: true
+
+linters-settings:
+  errcheck:
+    check-type-assertions: true
+    check-blank: true
+
+  govet:
+    check-shadowing: true
+    enable-all: true
+
+  gocyclo:
+    min-complexity: 15
+
+  goimports:
+    local-prefixes: github.com/scttfrdmn/aws-slurm-burst-advisor
+
+  goconst:
+    min-len: 3
+    min-occurrences: 3
+
+  misspell:
+    locale: US
+
+  gofmt:
+    simplify: true
+
+  gofumpt:
+    lang-version: "1.21"
+
+  staticcheck:
+    go: "1.21"
+
+  unused:
+    go: "1.21"
+
+  gosimple:
+    go: "1.21"
+
+  stylecheck:
+    go: "1.21"
+
+linters:
+  enable:
+    - errcheck        # Check for unchecked errors
+    - gosimple        # Simplify code
+    - govet           # Vet examines Go source code
+    - ineffassign     # Detect ineffective assignments
+    - staticcheck     # Advanced Go linter
+    - unused          # Check for unused constants, variables, functions and types
+    - typecheck       # Type-check Go code
+    - goimports       # Check import formatting
+    - gofmt           # Check code formatting
+    - gofumpt         # Stricter gofmt
+    - goconst         # Find repeated strings that could be constants
+    - gocyclo         # Check cyclomatic complexity
+    - misspell        # Find misspelled English words
+    - stylecheck      # Style checker
+    - unconvert       # Remove unnecessary type conversions
+    - unparam         # Report unused function parameters
+    - whitespace      # Detect leading/trailing whitespace
+    - gci             # Control Go imports order
+    - godot           # Check if comments end in a period
+    - gosec           # Inspect source code for security problems
+    - prealloc        # Find slice declarations could potentially be preallocated
+
+  disable:
+    - deadcode        # Deprecated in favor of unused
+    - varcheck        # Deprecated in favor of unused
+    - structcheck     # Deprecated in favor of unused
+    - golint          # Deprecated in favor of stylecheck
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  new: false
+
+  exclude-rules:
+    # Exclude some linters from running on tests files
+    - path: _test\.go
+      linters:
+        - gosec
+        - gocyclo
+        - errcheck
+        - dupl
+        - goconst
+
+    # Ignore magic number warnings in tests
+    - path: _test\.go
+      text: "magic number"
+
+    # Allow long lines in generated code
+    - source: "^//go:generate"
+      linters: [lll]
+
+  exclude:
+    # Ignore missing error checks in main function for CLI parsing
+    - "Error return value of.*rootCmd.Execute.*is not checked"
+
+    # Allow fmt.Printf in error handling (not fmt.Print)
+    - "use of `fmt.Printf` forbidden"

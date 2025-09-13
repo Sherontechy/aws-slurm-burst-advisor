@@ -1,0 +1,107 @@
+# Local Cluster Cost Configuration
+# This file defines the cost model for local cluster resources
+# Copy to /etc/aws-slurm-burst-advisor/local-costs.yaml
+
+# Global cost parameters
+depreciation_years: 3          # Hardware depreciation schedule
+utilization_target: 0.85       # Expected cluster utilization for cost calculations
+overhead_multiplier: 1.6       # Total overhead (staff, facilities, network, etc.)
+default_currency: "USD"
+
+# Per-partition cost models
+partitions:
+  # General CPU partition
+  cpu:
+    cost_per_cpu_hour: 0.05     # $0.05/CPU-hour (amortized hardware cost)
+    cost_per_node_hour: 0.10    # $0.10/node-hour (base overhead per node)
+    maintenance_factor: 1.3     # 30% overhead for maintenance/support
+    power_cost_factor: 1.2      # 20% additional for power/cooling
+
+  # High-memory partition
+  memory:
+    cost_per_cpu_hour: 0.06     # Slightly higher due to expensive memory
+    cost_per_node_hour: 0.15    # Higher node cost for memory nodes
+    maintenance_factor: 1.2     # Standard maintenance overhead
+    power_cost_factor: 1.1      # Slightly higher power consumption
+
+  # GPU partition
+  gpu:
+    cost_per_cpu_hour: 0.08     # Higher CPU cost on GPU nodes
+    cost_per_node_hour: 0.25    # Much higher node overhead
+    cost_per_gpu_hour: 2.50     # GPU hardware is expensive to amortize
+    maintenance_factor: 1.4     # Higher maintenance for complex GPU nodes
+    power_cost_factor: 1.5      # GPUs consume significant power
+
+  # High-performance GPU partition (A100, H100, etc.)
+  gpu-hpc:
+    cost_per_cpu_hour: 0.12
+    cost_per_node_hour: 0.50
+    cost_per_gpu_hour: 8.00     # Premium GPU hardware
+    maintenance_factor: 1.5     # Specialized maintenance required
+    power_cost_factor: 2.0      # Very high power consumption
+
+  # Debug/development partition (older hardware)
+  debug:
+    cost_per_cpu_hour: 0.03     # Lower cost for older hardware
+    cost_per_node_hour: 0.05    # Minimal overhead
+    maintenance_factor: 1.1     # Lower maintenance on debug nodes
+    power_cost_factor: 1.0      # Standard power consumption
+
+  # Large memory partition (1TB+ nodes)
+  bigmem:
+    cost_per_cpu_hour: 0.10     # Premium for large memory nodes
+    cost_per_node_hour: 0.40    # Very expensive memory hardware
+    maintenance_factor: 1.3     # Standard maintenance
+    power_cost_factor: 1.3      # Higher power for large memory
+
+  # Compute-optimized partition
+  compute:
+    cost_per_cpu_hour: 0.04     # Optimized for CPU performance
+    cost_per_node_hour: 0.08    # Lower memory overhead
+    maintenance_factor: 1.2     # Standard maintenance
+    power_cost_factor: 1.1      # Efficient CPU design
+
+# Cost calculation methodology notes:
+#
+# cost_per_cpu_hour: Amortized hardware cost per CPU core per hour
+#   - Calculate total hardware cost divided by expected lifetime hours
+#   - Include CPU, motherboard, memory allocation per core
+#   - Factor in expected utilization rate
+#
+# cost_per_node_hour: Base node overhead costs per hour
+#   - Network infrastructure per node
+#   - Storage allocation per node
+#   - Base power consumption
+#   - Fraction of admin overhead per node
+#
+# cost_per_gpu_hour: GPU hardware amortization per hour
+#   - GPU card cost divided by expected lifetime hours
+#   - Include specialized cooling/power infrastructure
+#   - Factor in rapid obsolescence of GPU hardware
+#
+# maintenance_factor: Multiplier for maintenance and support costs
+#   - Hardware replacement parts
+#   - System administration time
+#   - Software licensing per node
+#   - Preventive maintenance overhead
+#
+# power_cost_factor: Multiplier for power and cooling costs
+#   - Electricity consumption
+#   - Cooling infrastructure
+#   - UPS and power conditioning
+#   - Varies significantly by hardware type
+
+# Example calculation for a 4-node, 32-CPU, 2-hour job on 'cpu' partition:
+# Compute cost: 32 CPUs × $0.05/CPU-hour × 2 hours = $3.20
+# Node cost: 4 nodes × $0.10/node-hour × 2 hours = $0.80
+# Base cost: $3.20 + $0.80 = $4.00
+# Maintenance: $4.00 × (1.3 - 1.0) = $1.20
+# Power: $4.00 × (1.2 - 1.0) = $0.80
+# Total cost: $4.00 + $1.20 + $0.80 = $6.00
+
+# Site customization:
+# 1. Adjust costs based on your actual hardware acquisition costs
+# 2. Update depreciation_years based on your accounting practices
+# 3. Modify overhead_multiplier based on your operational costs
+# 4. Set utilization_target based on your cluster's typical usage
+# 5. Add or remove partitions to match your cluster configuration
