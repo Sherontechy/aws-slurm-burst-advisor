@@ -2,6 +2,7 @@
 
 # Variables
 BINARY_NAME=aws-slurm-burst-advisor
+SHORT_NAME=asba
 VERSION?=$(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 BUILD_TIME=$(shell date -u '+%Y-%m-%d_%H:%M:%S')
 GIT_COMMIT=$(shell git rev-parse HEAD 2>/dev/null || echo "unknown")
@@ -110,6 +111,8 @@ install: build
 	@echo "Installing $(BINARY_NAME) to /usr/local/bin..."
 	sudo cp $(BUILD_DIR)/$(BINARY_NAME) /usr/local/bin/
 	sudo chmod +x /usr/local/bin/$(BINARY_NAME)
+	@echo "Creating short alias $(SHORT_NAME)..."
+	sudo ln -sf /usr/local/bin/$(BINARY_NAME) /usr/local/bin/$(SHORT_NAME)
 
 # Install binary system-wide with configuration
 .PHONY: install-system
@@ -117,8 +120,9 @@ install-system: build config
 	@echo "Installing $(BINARY_NAME) system-wide..."
 	sudo cp $(BUILD_DIR)/$(BINARY_NAME) /usr/local/bin/
 	sudo chmod +x /usr/local/bin/$(BINARY_NAME)
-	sudo mkdir -p /etc/slurm-burst-advisor
-	sudo cp $(CONFIG_DIR)/*.yaml /etc/slurm-burst-advisor/ 2>/dev/null || true
+	sudo ln -sf /usr/local/bin/$(BINARY_NAME) /usr/local/bin/$(SHORT_NAME)
+	sudo mkdir -p /etc/aws-slurm-burst-advisor
+	sudo cp $(CONFIG_DIR)/*.yaml /etc/aws-slurm-burst-advisor/ 2>/dev/null || true
 
 # Create example configuration files
 .PHONY: config

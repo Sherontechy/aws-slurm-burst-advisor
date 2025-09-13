@@ -1,17 +1,23 @@
 # AWS SLURM Burst Advisor
 
-A specialized tool designed for **AWS ParallelCluster** environments to help HPC users make intelligent decisions about bursting workloads to AWS. Analyzes local cluster conditions versus AWS costs and performance to provide data-driven burst recommendations.
+A specialized tool designed for **academic researchers** using HPC clusters to make intelligent decisions about bursting computational workloads to AWS EC2. Helps maximize research productivity while staying within grant budgets by analyzing local cluster conditions versus AWS EC2 costs and performance.
 
 ## Overview
 
-The AWS SLURM Burst Advisor is built specifically for AWS-integrated HPC environments using SLURM with the AWS plugin. It analyzes your job requirements against current cluster conditions and real-time AWS pricing to provide intelligent recommendations on where to run your workload.
+The AWS SLURM Burst Advisor is built specifically for research computing environments using SLURM with the AWS plugin. It helps researchers make data-driven decisions about where to run computations by analyzing job requirements against current cluster conditions and real-time AWS pricing.
 
-**Key Decision Factors:**
+**Perfect for Academic Research:**
+- **Grant Budget Optimization**: Compare true costs between local and AWS execution
+- **Research Timeline Management**: Factor in paper deadlines and conference submissions
+- **Resource Efficiency**: Maximize computational throughput within budget constraints
+- **Cost Transparency**: Understand real costs of local cluster usage vs cloud bursting
+
+**Decision Factors:**
 - Current queue depth and estimated wait times on local cluster
 - Local cluster utilization and available capacity
-- Real-time AWS EC2 spot and on-demand pricing
-- True cost of local cluster resources (hardware, power, maintenance)
-- Time value considerations and urgency requirements
+- Real-time AWS EC2 spot and on-demand pricing with savings opportunities
+- True cost of local cluster resources (amortized hardware, power, staff time)
+- Research timeline urgency (paper deadlines, proposal submissions)
 - AWS instance availability and startup times
 
 ## Features
@@ -22,7 +28,7 @@ The AWS SLURM Burst Advisor is built specifically for AWS-integrated HPC environ
 - **Local Cost Modeling**: Realistic cost accounting for local cluster resources
 - **AWS-Optimized Recommendations**: Intelligent burst-to-AWS recommendations based on configurable preferences
 - **Multiple Input Methods**: Command-line parameters, batch files, or positional arguments
-- **AWS-Native**: Built specifically for AWS ParallelCluster and SLURM AWS plugin environments
+- **AWS-Native**: Built specifically for AWS EC2 and SLURM AWS plugin environments
 
 ## Installation
 
@@ -44,6 +50,16 @@ Download the latest release for your platform from the [releases page](https://g
 wget https://github.com/scttfrdmn/aws-slurm-burst-advisor/releases/latest/download/aws-slurm-burst-advisor-linux-amd64.tar.gz
 tar -xzf aws-slurm-burst-advisor-linux-amd64.tar.gz
 sudo cp aws-slurm-burst-advisor /usr/local/bin/
+```
+
+### Quick Start Alias
+
+For convenience, the installation creates a short alias `asba`:
+
+```bash
+# Both commands are equivalent:
+aws-slurm-burst-advisor job.sbatch gpu-aws
+asba job.sbatch gpu-aws
 ```
 
 ## Configuration
@@ -123,19 +139,19 @@ partitions:
 
 ```bash
 # Analyze batch script against AWS burst partition
-aws-slurm-burst-advisor --batch-file=job.sbatch --burst-partition=gpu-aws
+asba --batch-file=job.sbatch --burst-partition=gpu-aws
 
 # Manual job specification
-aws-slurm-burst-advisor --target-partition=cpu --burst-partition=cpu-aws \
-                        --nodes=4 --cpus-per-task=8 --time=2:00:00
+asba --target-partition=cpu --burst-partition=cpu-aws \
+     --nodes=4 --cpus-per-task=8 --time=2:00:00
 
 # Quick positional syntax
-aws-slurm-burst-advisor job.sbatch gpu-aws
+asba job.sbatch gpu-aws
 
 # Override partition from batch script
-aws-slurm-burst-advisor --batch-file=job.sbatch \
-                        --target-partition=cpu \
-                        --burst-partition=cpu-aws
+asba --batch-file=job.sbatch \
+     --target-partition=cpu \
+     --burst-partition=cpu-aws
 ```
 
 ### Example Output
@@ -203,6 +219,105 @@ python train_model.py
 
 All SLURM directives are automatically extracted and analyzed.
 
+## Academic Research Use Cases
+
+### **Machine Learning Training**
+```bash
+# Analyze GPU training job with deadline pressure
+asba ml_training.sbatch gpu-aws
+
+# Example decision factors:
+# - Local queue: 8 jobs ahead, 6h wait time
+# - AWS p3.8xlarge: $2.40/hour spot, 3min startup
+# - Recommendation: Burst to AWS (saves 5h45m for $12 extra)
+# - Perfect for conference deadline scenarios
+```
+
+### **Large-Scale Simulations**
+```bash
+# CPU-intensive climate simulation with flexible timeline
+asba --nodes=16 --cpus-per-task=4 --time=12:00:00 \
+     --target-partition=cpu --burst-partition=cpu-aws
+
+# Consider: Is 12 extra hours worth $50 savings?
+# Ideal for long-running research with flexible deadlines
+```
+
+### **Data Processing Pipelines**
+```bash
+# Memory-intensive genomics processing
+asba genomics_pipeline.sbatch memory-aws
+
+# Factors in:
+# - Data transfer costs for large datasets
+# - Processing urgency for research timelines
+# - Memory requirements vs AWS instance types
+```
+
+### **Grant Budget Planning**
+```bash
+# Analyze multiple jobs for quarterly budget estimation
+for job in experiments/*.sbatch; do
+  echo "=== $(basename $job) ==="
+  asba "$job" gpu-aws --json | jq -r '.recommendation | "Cost: $\(.cost_difference) | Time: \(.time_savings)"'
+done
+
+# Helps with:
+# - NSF/NIH grant budget justification
+# - Quarterly research spending planning
+# - Cost-per-experiment optimization
+```
+
+### **Research Workflow Automation**
+```bash
+# Smart job submission based on analysis
+analyze_and_submit() {
+  local job_script=$1
+  local aws_partition=$2
+
+  if asba "$job_script" "$aws_partition" --json | jq -e '.recommendation.preferred == "aws"' > /dev/null; then
+    echo "Submitting to AWS for faster results..."
+    sbatch --partition="$aws_partition" "$job_script"
+  else
+    echo "Using local cluster for cost efficiency..."
+    sbatch "$job_script"
+  fi
+}
+
+# Usage in research pipelines
+analyze_and_submit training_job.sbatch gpu-aws
+analyze_and_submit data_analysis.sbatch cpu-aws
+```
+
+## Cost Calculation Methodology
+
+### **Local Cluster True Costs**
+The tool calculates realistic local cluster costs including:
+
+- **Hardware Amortization**: Server/GPU costs divided by expected lifetime
+- **Power & Cooling**: Electricity and HVAC overhead (typically 20-50% of hardware cost)
+- **Staff Time**: System administration and maintenance (often overlooked)
+- **Facility Costs**: Data center space, networking, security
+- **Opportunity Cost**: What else could the budget fund?
+
+### **AWS EC2 Cost Components**
+- **Compute**: EC2 instance pricing (spot vs on-demand)
+- **Data Transfer**: Upload/download costs for research data
+- **Storage**: EBS volumes for temporary data
+- **Startup Overhead**: Time cost of instance provisioning
+
+### **Research Budget Impact**
+```bash
+# Example: 2-year ML research project
+Local cluster allocation: $50,000/year
+AWS burst budget: $5,000/year
+
+# Tool helps answer:
+# - Which experiments should use AWS vs local?
+# - How to maximize research output within budget?
+# - When is time-to-results worth the cost premium?
+```
+
 ## Development
 
 ### Building from Source
@@ -265,6 +380,33 @@ aws-slurm-burst-advisor/
 | `decision_weights.time_weight` | Weight for time considerations (0-1) | `0.7` |
 | `decision_weights.time_value_per_hour` | Dollar value of researcher time | `50.0` |
 
+### **Academic Configuration Tips**
+
+**For Graduate Students / Postdocs:**
+```yaml
+decision_weights:
+  cost_weight: 0.7        # Budget-conscious
+  time_weight: 0.3        # Less time pressure
+  time_value_per_hour: 25 # Lower hourly value
+```
+
+**For Faculty with Deadlines:**
+```yaml
+decision_weights:
+  cost_weight: 0.2        # Cost less important
+  time_weight: 0.8        # Time critical
+  time_value_per_hour: 100 # Higher opportunity cost
+```
+
+**For Large Research Groups:**
+```yaml
+local_costs:
+  partitions:
+    gpu:
+      cost_per_gpu_hour: 4.50  # Reflect true A100/H100 costs
+      maintenance_factor: 1.6   # Higher for research workloads
+```
+
 ### Local Costs Configuration (`local-costs.yaml`)
 
 | Setting | Description | Example |
@@ -277,7 +419,24 @@ aws-slurm-burst-advisor/
 
 ## Troubleshooting
 
-### Common Issues
+### **Research Environment Setup**
+
+**"My local costs seem wrong"**
+- Update `local-costs.yaml` with your institution's actual hardware costs
+- Include full overhead: power, cooling, staff time, facility costs
+- Many universities underestimate true cluster costs by 2-3x
+
+**"AWS costs seem high"**
+- Check if you're comparing spot vs on-demand pricing
+- Verify data transfer estimates for your workflow
+- Consider Reserved Instances for predictable workloads
+
+**"Recommendations don't match my intuition"**
+- Adjust `time_value_per_hour` based on your research stage
+- Consider deadline pressure vs budget constraints
+- Factor in grant renewal timing and available funds
+
+### Common Technical Issues
 
 **1. "SLURM commands not found"**
 ```bash
@@ -320,7 +479,7 @@ scontrol show partition your-partition
 Enable verbose logging:
 
 ```bash
-aws-slurm-burst-advisor --verbose your-args
+asba --verbose your-args
 ```
 
 ### Validation
