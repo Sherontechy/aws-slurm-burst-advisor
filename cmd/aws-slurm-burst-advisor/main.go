@@ -45,8 +45,8 @@ var rootCmd = &cobra.Command{
 	Use:   "aws-slurm-burst-advisor",
 	Short: "Analyze whether to submit jobs to local cluster or burst to AWS",
 	Long: `AWS SLURM Burst Advisor - A tool to help HPC users decide whether to submit
-their jobs to the local cluster or burst to AWS based on queue conditions, costs,
-and time-to-completion analysis. Built specifically for AWS ParallelCluster environments.
+their jobs to the local cluster or burst to AWS EC2 based on queue conditions, costs,
+and time-to-completion analysis. Built for SLURM clusters with AWS EC2 bursting capability.
 
 Examples:
   # Analyze using batch script
