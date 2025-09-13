@@ -16,6 +16,7 @@ import (
 	"github.com/scttfrdmn/aws-slurm-burst-advisor/internal/analyzer"
 	"github.com/scttfrdmn/aws-slurm-burst-advisor/internal/aws"
 	"github.com/scttfrdmn/aws-slurm-burst-advisor/internal/config"
+	"github.com/scttfrdmn/aws-slurm-burst-advisor/internal/history"
 	"github.com/scttfrdmn/aws-slurm-burst-advisor/internal/slurm"
 	"github.com/scttfrdmn/aws-slurm-burst-advisor/internal/types"
 )
@@ -31,6 +32,13 @@ var (
 	memory          string
 	gres            string
 	verbose         bool
+
+	// Phase 1: History tracking flags
+	trackHistory    bool
+	withHistory     bool
+	optimize        bool
+	recommendInstance bool
+	historyDays     int
 )
 
 var rootCmd = &cobra.Command{
@@ -71,6 +79,13 @@ func init() {
 	rootCmd.Flags().StringVar(&timeLimit, "time", "", "time limit (e.g., 2:00:00)")
 	rootCmd.Flags().StringVar(&memory, "mem", "", "memory per node")
 	rootCmd.Flags().StringVar(&gres, "gres", "", "generic resources (e.g., gpu:2)")
+
+	// Phase 1: History tracking flags
+	rootCmd.Flags().BoolVar(&trackHistory, "track-history", false, "enable job history collection")
+	rootCmd.Flags().BoolVar(&withHistory, "with-history", false, "show historical insights")
+	rootCmd.Flags().BoolVar(&optimize, "optimize", false, "suggest resource optimizations based on history")
+	rootCmd.Flags().BoolVar(&recommendInstance, "recommend-instance", false, "suggest better AWS instance types")
+	rootCmd.Flags().IntVar(&historyDays, "history-days", 90, "days of history to analyze (1-365)")
 
 	// Mark required flags
 	rootCmd.MarkFlagRequired("burst-partition")
@@ -183,7 +198,36 @@ func performAnalysis(ctx context.Context, cfg *config.Config, jobReq *types.JobR
 		return nil, fmt.Errorf("failed to initialize AWS client: %w", err)
 	}
 
-	analyzer := analyzer.NewDecisionEngine(cfg.Weights)
+	// Initialize analyzer (with or without history)
+	var baseAnalyzer *analyzer.DecisionEngine
+	var historyAnalyzer *analyzer.HistoryAwareAnalyzer
+
+	if withHistory || optimize || recommendInstance {
+		// Initialize history database
+		currentUser, err := slurm.GetCurrentUser()
+		if err != nil {
+			fmt.Printf("Warning: failed to get current user for history: %v\n", err)
+			baseAnalyzer = analyzer.NewDecisionEngine(cfg.Weights)
+		} else {
+			historyDB, err := history.NewJobHistoryDB(currentUser)
+			if err != nil {
+				fmt.Printf("Warning: failed to initialize job history: %v\n", err)
+				baseAnalyzer = analyzer.NewDecisionEngine(cfg.Weights)
+			} else {
+				defer historyDB.Close()
+				historyAnalyzer = analyzer.NewHistoryAwareAnalyzer(cfg.Weights, historyDB)
+
+				// Collect recent job history if tracking is enabled
+				if trackHistory {
+					if err := collectJobHistory(ctx, slurmClient, historyDB, currentUser, historyDays); err != nil {
+						fmt.Printf("Warning: failed to collect job history: %v\n", err)
+					}
+				}
+			}
+		}
+	} else {
+		baseAnalyzer = analyzer.NewDecisionEngine(cfg.Weights)
+	}
 
 	// Analyze both partitions concurrently
 	var wg sync.WaitGroup
@@ -240,16 +284,69 @@ func performAnalysis(ctx context.Context, cfg *config.Config, jobReq *types.JobR
 		}
 	}
 
-	// Generate recommendation
-	recommendation := analyzer.Compare(targetAnalysis, burstAnalysis, jobReq)
+	// Generate recommendation using appropriate analyzer
+	var analysis *types.Analysis
 
-	return &types.Analysis{
-		TargetPartition: targetAnalysis,
-		BurstPartition:  burstAnalysis,
-		Recommendation:  recommendation,
-		Timestamp:       time.Now(),
-		JobRequest:      jobReq,
-	}, nil
+	if historyAnalyzer != nil && (withHistory || optimize || recommendInstance) {
+		// Use history-aware analysis
+		enhanced, err := historyAnalyzer.AnalyzeWithHistory(targetAnalysis, burstAnalysis, jobReq, batchFile)
+		if err != nil {
+			// Fall back to basic analysis
+			fmt.Printf("Warning: history analysis failed, using basic analysis: %v\n", err)
+			recommendation := baseAnalyzer.Compare(targetAnalysis, burstAnalysis, jobReq)
+			analysis = &types.Analysis{
+				TargetPartition: targetAnalysis,
+				BurstPartition:  burstAnalysis,
+				Recommendation:  recommendation,
+				Timestamp:       time.Now(),
+				JobRequest:      jobReq,
+			}
+		} else {
+			// Use enhanced analysis result
+			if enhanced.Optimized != nil && optimize {
+				analysis = enhanced.Optimized
+				// Store enhanced data for display
+				analysis.Metadata.DataSources = append(analysis.Metadata.DataSources, "job_history")
+			} else {
+				analysis = enhanced.Current
+			}
+
+			// Display historical insights if requested
+			if withHistory && enhanced.HistoryInsights != nil {
+				displayHistoricalInsights(enhanced.HistoryInsights)
+			}
+
+			// Display optimizations if requested
+			if optimize && len(enhanced.ResourceOptimizations) > 0 {
+				displayResourceOptimizations(enhanced.ResourceOptimizations)
+			}
+
+			// Display instance recommendations if requested
+			if recommendInstance && len(enhanced.InstanceRecommendations) > 0 {
+				displayInstanceRecommendations(enhanced.InstanceRecommendations)
+			}
+
+			// Display decision impact if optimization changed the recommendation
+			if enhanced.DecisionImpact != nil && enhanced.DecisionImpact.DecisionChanged {
+				displayDecisionImpact(enhanced.DecisionImpact)
+			}
+		}
+	} else {
+		// Use basic analysis
+		if baseAnalyzer == nil {
+			baseAnalyzer = analyzer.NewDecisionEngine(cfg.Weights)
+		}
+		recommendation := baseAnalyzer.Compare(targetAnalysis, burstAnalysis, jobReq)
+		analysis = &types.Analysis{
+			TargetPartition: targetAnalysis,
+			BurstPartition:  burstAnalysis,
+			Recommendation:  recommendation,
+			Timestamp:       time.Now(),
+			JobRequest:      jobReq,
+		}
+	}
+
+	return analysis, nil
 }
 
 func analyzeLocalPartition(ctx context.Context, client *slurm.Client, cfg *config.Config, partition string, job *types.JobRequest) (*types.PartitionAnalysis, error) {
@@ -488,6 +585,131 @@ func parseGRES(gresStr string) map[string]int {
 	}
 
 	return gres
+}
+
+// collectJobHistory collects recent job history for the user
+func collectJobHistory(ctx context.Context, client *slurm.Client, historyDB *history.JobHistoryDB, user string, days int) error {
+	// Get detailed job efficiency data from SLURM
+	jobs, err := client.GetUserJobEfficiency(ctx, user, days)
+	if err != nil {
+		return fmt.Errorf("failed to get user job efficiency: %w", err)
+	}
+
+	// Store jobs in history database
+	stored := 0
+	for _, job := range jobs {
+		// Calculate script hash if script path is available
+		if job.ScriptPath != "" {
+			if hash, err := client.GetJobScriptHash(job.ScriptPath); err == nil {
+				job.ScriptHash = hash
+			}
+		}
+
+		if err := historyDB.StoreJobExecution(job); err != nil {
+			fmt.Printf("Warning: failed to store job %s: %v\n", job.JobID, err)
+			continue
+		}
+		stored++
+	}
+
+	if verbose {
+		fmt.Printf("Collected %d job records (%d stored) from last %d days\n", len(jobs), stored, days)
+	}
+
+	return nil
+}
+
+// displayHistoricalInsights shows insights from job history
+func displayHistoricalInsights(insights *analyzer.HistoryInsights) {
+	fmt.Println("\nHISTORICAL INSIGHTS")
+	fmt.Println("===================")
+
+	if insights.SimilarJobsFound == 0 {
+		fmt.Println("No similar jobs found in your history")
+		return
+	}
+
+	fmt.Printf("Similar jobs found: %d\n", insights.SimilarJobsFound)
+	fmt.Printf("Confidence: %.0f%%\n", insights.Confidence*100)
+
+	if insights.EfficiencyTrends != nil {
+		fmt.Printf("\nEfficiency patterns:\n")
+		fmt.Printf("  CPU efficiency: %.1f%% average (%s trend)\n",
+			insights.EfficiencyTrends.CPUEfficiencyAvg, insights.EfficiencyTrends.CPUTrend)
+		fmt.Printf("  Memory efficiency: %.1f%% average (%s trend)\n",
+			insights.EfficiencyTrends.MemoryEfficiencyAvg, insights.EfficiencyTrends.MemoryTrend)
+		fmt.Printf("  Time efficiency: %.1f%% average (%s trend)\n",
+			insights.EfficiencyTrends.TimeEfficiencyAvg, insights.EfficiencyTrends.TimeTrend)
+	}
+
+	if insights.JobPattern != nil {
+		fmt.Printf("\nJob pattern detected:\n")
+		fmt.Printf("  Workload type: %s\n", insights.JobPattern.WorkloadType)
+		fmt.Printf("  Typical effective CPUs: %.1f\n", insights.JobPattern.TypicalEffectiveCPUs)
+		fmt.Printf("  Typical memory usage: %.1fGB\n", insights.JobPattern.TypicalMemoryUsageGB)
+		fmt.Printf("  Success rate: %.0f%%\n", insights.JobPattern.SuccessRate*100)
+	}
+}
+
+// displayResourceOptimizations shows resource optimization suggestions
+func displayResourceOptimizations(optimizations []analyzer.ResourceOptimization) {
+	fmt.Println("\nRESOURCE OPTIMIZATIONS")
+	fmt.Println("======================")
+
+	for _, opt := range optimizations {
+		fmt.Printf("\n%s OPTIMIZATION:\n", strings.ToUpper(opt.ResourceType))
+		fmt.Printf("  Current: %s\n", opt.CurrentValue)
+		fmt.Printf("  Suggested: %s\n", opt.SuggestedValue)
+		fmt.Printf("  Reasoning: %s\n", opt.Reasoning)
+		fmt.Printf("  Confidence: %.0f%% (%s risk)\n", opt.ConfidenceLevel*100, opt.RiskLevel)
+
+		if opt.LocalSavings > 0 {
+			fmt.Printf("  Local savings: $%.2f per run\n", opt.LocalSavings)
+		}
+		if opt.AWSSavings > 0 {
+			fmt.Printf("  AWS savings: $%.2f per run\n", opt.AWSSavings)
+		}
+	}
+}
+
+// displayInstanceRecommendations shows AWS instance type recommendations
+func displayInstanceRecommendations(recommendations []analyzer.InstanceRecommendation) {
+	fmt.Println("\nAWS INSTANCE RECOMMENDATIONS")
+	fmt.Println("============================")
+
+	for _, rec := range recommendations {
+		fmt.Printf("\nRecommended family: %s\n", rec.InstanceFamily)
+		if rec.InstanceType != "" {
+			fmt.Printf("Specific instance: %s\n", rec.InstanceType)
+		}
+		fmt.Printf("CPU:Memory ratio: %.1fGB per vCPU\n", rec.CPUMemoryRatio)
+		fmt.Printf("Reasoning: %s\n", rec.Reasoning)
+		fmt.Printf("Cost impact: %s\n", rec.CostImpact)
+		fmt.Printf("Performance impact: %s\n", rec.PerformanceImpact)
+		fmt.Printf("Confidence: %.0f%%\n", rec.ConfidenceLevel*100)
+	}
+}
+
+// displayDecisionImpact shows how optimization changes the AWS vs local decision
+func displayDecisionImpact(impact *analyzer.DecisionImpact) {
+	fmt.Println("\nDECISION IMPACT")
+	fmt.Println("===============")
+
+	fmt.Printf("Original recommendation: %s\n", impact.OriginalRecommendation)
+	fmt.Printf("Optimized recommendation: %s\n", impact.OptimizedRecommendation)
+
+	if impact.DecisionChanged {
+		fmt.Printf("✨ OPTIMIZATION CHANGED THE DECISION! ✨\n")
+	}
+
+	fmt.Printf("Impact: %s\n", impact.ImpactDescription)
+
+	if impact.CostDifferenceChange != 0 {
+		fmt.Printf("Cost difference change: $%.2f\n", impact.CostDifferenceChange)
+	}
+	if impact.TimeDifferenceChange != 0 {
+		fmt.Printf("Time difference change: %v\n", impact.TimeDifferenceChange)
+	}
 }
 
 func main() {
