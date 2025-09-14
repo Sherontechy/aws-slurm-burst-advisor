@@ -115,7 +115,67 @@ func DetectPatterns(executions []JobExecution) []JobPattern {
 
 ---
 
-## Phase 2: Practical Optimization (v0.3.0)
+## Phase 2: Sister Project Integration & Intelligence Engine (v0.3.0)
+
+### **🚀 CRITICAL: aws-slurm-burst Integration (HIGH PRIORITY)**
+
+The sister project `aws-slurm-burst` has **already implemented execution plan support**! This creates immediate opportunities for seamless integration.
+
+#### **2.0 Execution Plan Generation (URGENT)**
+```go
+// NEW: Generate execution plans for aws-slurm-burst plugin
+type ExecutionPlanGenerator struct {
+    analyzer        *HistoryAwareAnalyzer
+    domainDetector  *DomainDetector
+    mpiOptimizer    *MPIOptimizer
+}
+
+type ExecutionPlan struct {
+    InstanceSpecification InstanceSpec    `json:"instance_specification"`
+    MPIConfiguration     MPIConfig       `json:"mpi_configuration"`
+    NetworkConfiguration NetworkConfig   `json:"network_configuration"`
+    CostConstraints      CostConstraints `json:"cost_constraints"`
+    PerformanceTarget    PerformanceTarget `json:"performance_target"`
+}
+
+// Generate plans that aws-slurm-burst can execute directly
+func (e *ExecutionPlanGenerator) GenerateExecutionPlan(
+    analysis *EnhancedAnalysis,
+    job *types.JobRequest,
+    scriptPath string,
+) (*ExecutionPlan, error) {
+    // Combine ASBA intelligence into executable plan
+}
+```
+
+#### **2.1 Domain Detection Engine**
+```go
+// NEW: Research domain classification for MPI optimization
+type DomainDetector struct {
+    scriptAnalyzer   ScriptAnalyzer
+    patternMatcher   PatternMatcher
+    domainProfiles   map[string]DomainProfile
+}
+
+type DomainProfile struct {
+    Name                 string            `json:"name"`
+    MPICommunicationPattern string         `json:"mpi_pattern"`
+    NetworkRequirements  NetworkRequirements `json:"network_requirements"`
+    OptimalInstanceTypes []string          `json:"optimal_instance_types"`
+    MPILibraryPreferences []string         `json:"mpi_library_preferences"`
+}
+
+// Detect research domain from job characteristics
+func (d *DomainDetector) DetectDomain(scriptPath string, jobReq *types.JobRequest, history []types.JobEfficiencyData) (*DomainClassification, error) {
+    // Analyze:
+    // - Script content (modules loaded, executables)
+    // - Resource patterns (CPU-memory ratio, scaling behavior)
+    // - Historical communication patterns
+    // - Job naming conventions
+}
+```
+
+## Phase 2: Original Practical Optimization (v0.3.0)
 
 ### **2.1 Resource Right-Sizing for Better AWS vs Local Decisions**
 ```bash
@@ -500,102 +560,195 @@ asba training.sbatch gpu-aws --recommend-instance
 # Risk: Low (similar memory-bound jobs perform well on g4dn)
 ```
 
-### **Success Metrics for v0.2.0**
-- [ ] 90% of users see immediate value after 3+ job runs
-- [ ] 15% average resource optimization (CPU-memory right-sizing)
-- [ ] 25% improvement in AWS vs local decision accuracy
-- [ ] 80% of recommendations correctly identify CPU vs memory bottlenecks
-- [ ] Zero setup overhead - works out of the box
+#### **2.2 New CLI Commands for Integration**
+```bash
+# NEW: Generate execution plans for aws-slurm-burst
+asba analyze job.sbatch gpu-aws --output-execution-plan=plan.json
+
+# NEW: Integrated burst workflow (analyze + execute)
+asba burst job.sbatch gpu-aws
+
+# NEW: Domain detection and optimization
+asba detect-domain job.sbatch --output=json
+asba optimize-for-domain job.sbatch --domain=climate_modeling
+
+# NEW: Learning from aws-slurm-burst performance data
+asba learn-from-execution --job-id=12345 --performance-data=results.json
+asba update-models --from-aws-metadata --days=30
+```
+
+#### **2.3 MPI Intelligence Engine**
+```go
+// NEW: MPI optimization intelligence for research domains
+type MPIIntelligenceEngine struct {
+    communicationAnalyzer CommunicationPatternAnalyzer
+    networkOptimizer     NetworkOptimizer
+    domainSpecializer    DomainSpecializer
+}
+
+// Features:
+- Detect MPI communication patterns from job scripts
+- Optimize process placement for AWS network topology
+- Recommend MPI library configurations
+- Generate network optimization parameters
+```
+
+### **Success Metrics for v0.2.0 (Phase 1)**
+- [x] 90% of users see immediate value after 3+ job runs
+- [x] 15% average resource optimization (CPU-memory right-sizing)
+- [x] 25% improvement in AWS vs local decision accuracy
+- [x] 80% of recommendations correctly identify CPU vs memory bottlenecks
+- [x] Zero setup overhead - works out of the box
+
+### **Success Metrics for v0.3.0 (Phase 2)**
+- [ ] Seamless integration with aws-slurm-burst plugin via execution plans
+- [ ] Domain detection accuracy >80% for common research workloads
+- [ ] MPI optimization recommendations improve performance >20%
+- [ ] Performance learning loop validates >90% of ASBA predictions
+- [ ] Integrated burst workflow reduces researcher manual effort >50%
 
 ---
 
-## Next Steps: Start Phase 1 Development
+## Next Steps: Phase 2 Development (Integration Priority)
 
-### **Immediate Development Plan**
+### **Phase 2 Immediate Development Plan (URGENT)**
 
-#### **Step 1: Extend SLURM Client for Efficiency Data**
+The sister project has created an immediate integration opportunity! aws-slurm-burst **already supports execution plans**, so ASBA needs to generate them.
+
+### **Week 1-2: Execution Plan Generation (TOP PRIORITY)**
+
+#### **Step 1: Create Execution Plan Types**
 ```go
-// Add to internal/slurm/client.go
-func (c *Client) GetUserJobEfficiency(ctx context.Context, user string, days int) ([]JobEfficiencyData, error) {
-    cmd := exec.CommandContext(ctx, c.binPath+"/sacct",
-        "--user", user,
-        "--starttime", startTime.Format("2006-01-02"),
-        "--format=JobID,JobName,ReqCPUs,ReqMem,TotalCPU,CPUTime,MaxRSS,Elapsed,ExitCode,Partition",
-        "--units=M",
-        "--noheader",
-        "--parsable2",
-    )
+// Add to internal/types/execution.go
+type ExecutionPlan struct {
+    JobMetadata          JobMetadata          `json:"job_metadata"`
+    InstanceSpecification InstanceSpec        `json:"instance_specification"`
+    MPIConfiguration     MPIConfig           `json:"mpi_configuration"`
+    NetworkConfiguration NetworkConfig       `json:"network_configuration"`
+    CostConstraints      CostConstraints     `json:"cost_constraints"`
+    PerformanceTarget    PerformanceTarget   `json:"performance_target"`
+    ASBAVersion          string              `json:"asba_version"`
+    GeneratedAt          time.Time           `json:"generated_at"`
+}
 
-    output, err := cmd.Output()
-    if err != nil {
-        return nil, errors.NewSLURMError("GetUserJobEfficiency", "sacct command failed", err)
+type InstanceSpec struct {
+    InstanceTypes        []string `json:"instance_types"`
+    InstanceCount        int      `json:"instance_count"`
+    SpotInstanceConfig   SpotConfig `json:"spot_instance_config"`
+    PlacementGroup       string   `json:"placement_group"`
+    AvailabilityZones    []string `json:"availability_zones"`
+}
+
+type MPIConfig struct {
+    ProcessesPerNode     int      `json:"processes_per_node"`
+    CommunicationPattern string   `json:"communication_pattern"`
+    MPILibrary          string   `json:"mpi_library"`
+    MPITuningParams     map[string]string `json:"mpi_tuning_params"`
+}
+```
+
+#### **Step 2: Create Execution Plan Generator**
+```go
+// Add to internal/analyzer/execution_planner.go
+type ExecutionPlanGenerator struct {
+    analyzer       *HistoryAwareAnalyzer
+    domainDetector *DomainDetector
+    mpiOptimizer   *MPIOptimizer
+}
+
+func (e *ExecutionPlanGenerator) GenerateExecutionPlan(
+    analysis *EnhancedAnalysis,
+    job *types.JobRequest,
+    scriptPath string,
+) (*ExecutionPlan, error) {
+    // 1. Detect research domain
+    domain := e.domainDetector.DetectDomain(scriptPath, job, analysis.HistoryInsights)
+
+    // 2. Generate optimized instance specification
+    instanceSpec := e.generateInstanceSpec(analysis.InstanceRecommendations, job)
+
+    // 3. Generate MPI configuration for domain
+    mpiConfig := e.mpiOptimizer.OptimizeForDomain(domain, job)
+
+    // 4. Create execution plan
+    return &ExecutionPlan{
+        InstanceSpecification: instanceSpec,
+        MPIConfiguration:     mpiConfig,
+        NetworkConfiguration: e.generateNetworkConfig(domain),
+        PerformanceTarget:    e.generatePerformanceTarget(analysis),
     }
-
-    return c.parseJobEfficiencyData(string(output))
 }
 ```
 
-#### **Step 2: Create Job History Database**
+#### **Step 3: Add Domain Detection**
 ```go
-// Add internal/history package
-type JobHistoryDB struct {
-    db   *sql.DB
-    user string
+// Add internal/domain package
+type DomainDetector struct {
+    scriptPatterns  map[string]DomainPattern
+    resourcePatterns map[string]ResourcePattern
 }
 
-func NewJobHistoryDB(user string) (*JobHistoryDB, error) {
-    dbPath := filepath.Join(os.Getenv("HOME"), ".asba", "jobs.db")
-    // Create database with schema for CPU-memory efficiency tracking
-}
-```
+func (d *DomainDetector) DetectDomain(scriptPath string, job *JobRequest, history *HistoryInsights) DomainClassification {
+    // Analyze script content for domain hints
+    scriptDomain := d.analyzeScriptContent(scriptPath)
 
-#### **Step 3: Add History-Aware Analysis**
-```go
-// Extend internal/analyzer/decision_engine.go
-type HistoryAwareAnalyzer struct {
-    baseAnalyzer *DecisionEngine
-    historyDB    *history.JobHistoryDB
-}
+    // Analyze resource patterns
+    resourceDomain := d.analyzeResourcePattern(job, history)
 
-func (h *HistoryAwareAnalyzer) AnalyzeWithHistory(job *types.JobRequest, scriptPath string) (*EnhancedAnalysis, error) {
-    // 1. Run current analysis (queue + cost)
-    baseAnalysis := h.baseAnalyzer.Compare(local, aws, job)
-
-    // 2. Look for similar jobs in user history
-    similar := h.historyDB.FindSimilarJobs(scriptPath, job)
-
-    // 3. Generate resource optimization suggestions
-    optimizations := h.generateOptimizations(job, similar)
-
-    // 4. Re-run analysis with optimized resources
-    if len(optimizations) > 0 {
-        optimizedJob := h.applyOptimizations(job, optimizations)
-        optimizedAnalysis := h.baseAnalyzer.Compare(local, aws, optimizedJob)
-
-        return &EnhancedAnalysis{
-            Current:      baseAnalysis,
-            Optimized:    optimizedAnalysis,
-            Optimizations: optimizations,
-            HistoryInsights: h.generateInsights(similar),
-        }
-    }
-
-    return &EnhancedAnalysis{Current: baseAnalysis}
+    // Combine signals for classification
+    return d.classifyDomain(scriptDomain, resourceDomain)
 }
 ```
 
-#### **Step 4: CLI Integration**
+#### **Step 4: Integrated CLI Commands**
 ```bash
-# Add new flags to main.go
---track-history     # Enable job history collection
---with-history      # Show historical insights
---optimize         # Suggest resource optimizations
---recommend-instance # Suggest better AWS instance types
-
-# Usage examples:
-asba job.sbatch gpu-aws --with-history --optimize
-asba history --script training.sbatch --days 90
-asba insights --efficiency --user researcher
+# Add new commands to main.go
+asba burst job.sbatch gpu-aws                    # Analyze + generate execution plan
+asba execution-plan job.sbatch gpu-aws           # Generate plan only
+asba detect-domain job.sbatch                    # Domain classification
+asba learn-performance --job-id=12345            # Learn from aws-slurm-burst results
 ```
 
-This approach focuses on the core value: **better AWS vs local decisions through intelligent resource optimization based on your actual job execution patterns**.
+### **Week 3-4: Domain Intelligence Implementation**
+
+#### **Step 5: Research Domain Profiles**
+```go
+// Add internal/domain/profiles.go
+var ResearchDomainProfiles = map[string]DomainProfile{
+    "climate_modeling": {
+        MPICommunicationPattern: "nearest_neighbor",
+        NetworkRequirements: NetworkRequirements{
+            LatencyTolerance: "medium",
+            BandwidthNeeds: "high",
+            TopologyImportance: "important",
+        },
+        OptimalInstanceTypes: []string{"c5n.18xlarge", "m5n.24xlarge"},
+        MPILibraryPreferences: []string{"OpenMPI", "Intel MPI"},
+        ProcessPlacement: "topology_aware",
+    },
+    "machine_learning": {
+        MPICommunicationPattern: "all_reduce",
+        NetworkRequirements: NetworkRequirements{
+            LatencyTolerance: "low",
+            BandwidthNeeds: "very_high",
+            TopologyImportance: "critical",
+        },
+        OptimalInstanceTypes: []string{"p3dn.24xlarge", "p4d.24xlarge"},
+        MPILibraryPreferences: []string{"NCCL", "OpenMPI"},
+        ProcessPlacement: "gpu_topology_aware",
+    },
+    "bioinformatics": {
+        MPICommunicationPattern: "embarrassingly_parallel",
+        NetworkRequirements: NetworkRequirements{
+            LatencyTolerance: "high",
+            BandwidthNeeds: "low",
+            TopologyImportance: "minimal",
+        },
+        OptimalInstanceTypes: []string{"c5.24xlarge", "r5.12xlarge"},
+        MPILibraryPreferences: []string{"OpenMPI", "MPICH"},
+        ProcessPlacement: "cpu_dense",
+    },
+}
+```
+
+This approach focuses on ASBA becoming the **intelligence engine** that drives optimal execution via the aws-slurm-burst plugin.
