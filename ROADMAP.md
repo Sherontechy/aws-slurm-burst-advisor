@@ -117,13 +117,13 @@ func DetectPatterns(executions []JobExecution) []JobPattern {
 
 ## Phase 2: Sister Project Integration & Intelligence Engine (v0.3.0)
 
-### **🚀 CRITICAL: aws-slurm-burst Integration (HIGH PRIORITY)**
+### **🚀 CRITICAL: ASBX Integration (HIGH PRIORITY)**
 
-The sister project `aws-slurm-burst` has **already implemented execution plan support**! This creates immediate opportunities for seamless integration.
+The sister project `ASBX (aws-slurm-burst)` has **already implemented execution plan support**! This creates immediate opportunities for seamless integration.
 
 #### **2.0 Execution Plan Generation (URGENT)**
 ```go
-// NEW: Generate execution plans for aws-slurm-burst plugin
+// NEW: Generate execution plans for ASBX plugin
 type ExecutionPlanGenerator struct {
     analyzer        *HistoryAwareAnalyzer
     domainDetector  *DomainDetector

@@ -56,7 +56,7 @@ sudo make install-system
 For integrated burst execution, install the companion plugin:
 
 ```bash
-# Install aws-slurm-burst plugin for seamless execution
+# Install ASBX (aws-slurm-burst) plugin for seamless execution
 git clone https://github.com/scttfrdmn/aws-slurm-burst.git
 cd aws-slurm-burst
 make install
@@ -382,41 +382,58 @@ AWS burst budget: $5,000/year
 
 ## Sister Project Integration
 
-### **aws-slurm-burst Plugin**
-ASBA integrates seamlessly with the [aws-slurm-burst](https://github.com/scttfrdmn/aws-slurm-burst) plugin for optimal execution:
+### **ASBX (aws-slurm-burst) Plugin**
+ASBA integrates seamlessly with the [ASBX (aws-slurm-burst)](https://github.com/scttfrdmn/aws-slurm-burst) plugin for optimal execution:
 
 ```bash
-# ASBA provides intelligence, aws-slurm-burst provides execution
+# ASBA provides intelligence, ASBX provides execution
 asba burst job.sbatch gpu-aws aws-gpu-[001-004]
 
 # Behind the scenes:
 # 1. ASBA analyzes job with domain detection and optimization
 # 2. ASBA generates execution plan with MPI and network optimization
-# 3. aws-slurm-burst executes job with optimal AWS configuration
+# 3. ASBX executes job with optimal AWS configuration
 # 4. Performance data flows back to ASBA for learning
 ```
 
 ### **Execution Plan Generation**
 ```bash
-# Generate execution plans for the plugin
+# Generate execution plans for ASBX plugin
 asba execution-plan training.sbatch gpu-aws --output=plan.json
 
-# Manual execution via plugin
+# Manual execution via ASBX plugin
 aws-slurm-burst resume aws-gpu-[001-004] --execution-plan=plan.json
 ```
 
-### **Research Computing Ecosystem**
+### **Complete Academic Research Computing Ecosystem**
 ```
 ┌─────────────────────┐    ┌─────────────────────┐    ┌─────────────────────┐
-│       ASBA          │    │  aws-slurm-burst    │    │ SLURM Budget Bank   │
+│       ASBA          │    │      ASBX           │    │      ASBB           │
 │ INTELLIGENCE ENGINE │───►│ EXECUTION ENGINE    │◄──►│ FINANCIAL ENGINE    │
-│                     │    │                     │    │     (Future)        │
+│                     │    │ (aws-slurm-burst)   │    │(aws-slurm-burst-budget)│
 │ • Domain detection  │    │ • MPI execution     │    │ • Real money budgets│
 │ • Resource opt      │    │ • AWS provisioning  │    │ • Account management│
 │ • Execution plans   │    │ • Performance mon   │    │ • Grant compliance  │
 │ • Learning models   │◄──►│ • Cost reporting    │    │ • Spend controls    │
 └─────────────────────┘    └─────────────────────┘    └─────────────────────┘
 ```
+
+#### **Complete Integration Workflow:**
+```bash
+# 1. Budget-aware analysis with domain optimization
+asba burst job.sbatch gpu-aws aws-gpu-[001-004] --account=NSF-ABC123
+
+# Behind the scenes:
+# 1. ASBA checks budget availability via ASBB
+# 2. ASBA generates domain-optimized execution plan
+# 3. ASBX executes with MPI and cost optimization
+# 4. ASBB debits actual costs from grant account
+# 5. Performance data flows back for learning
+```
+
+#### **Sister Projects:**
+- **ASBX**: [aws-slurm-burst](https://github.com/scttfrdmn/aws-slurm-burst) - High-performance MPI execution
+- **ASBB**: [aws-slurm-burst-budget](https://github.com/scttfrdmn/aws-slurm-burst-budget) - Real money budget management
 
 ## Development
 
