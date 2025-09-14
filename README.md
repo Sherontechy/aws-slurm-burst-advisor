@@ -1,6 +1,22 @@
 # AWS SLURM Burst Advisor
 
-A specialized tool designed for **academic researchers** using HPC clusters to make intelligent decisions about bursting computational workloads to AWS EC2. Helps maximize research productivity while staying within grant budgets by analyzing local cluster conditions versus AWS EC2 costs and performance.
+[![Go Report Card](https://goreportcard.com/badge/github.com/scttfrdmn/aws-slurm-burst-advisor)](https://goreportcard.com/report/github.com/scttfrdmn/aws-slurm-burst-advisor)
+[![Go Reference](https://pkg.go.dev/badge/github.com/scttfrdmn/aws-slurm-burst-advisor.svg)](https://pkg.go.dev/github.com/scttfrdmn/aws-slurm-burst-advisor)
+[![GitHub Release](https://img.shields.io/github/release/scttfrdmn/aws-slurm-burst-advisor.svg)](https://github.com/scttfrdmn/aws-slurm-burst-advisor/releases/latest)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Build Status](https://github.com/scttfrdmn/aws-slurm-burst-advisor/workflows/CI/badge.svg)](https://github.com/scttfrdmn/aws-slurm-burst-advisor/actions)
+
+![Project Status](https://img.shields.io/badge/Status-Phase%202%20Complete-brightgreen)
+![Academic Focus](https://img.shields.io/badge/Target-Academic%20Research-blue)
+![Integration Ready](https://img.shields.io/badge/ASBX%20Integration-Ready-success)
+![Sister Projects](https://img.shields.io/badge/Ecosystem-ASBA%20%7C%20ASBX%20%7C%20ASBB-orange)
+
+**ASBA** is the intelligence engine of a comprehensive academic research computing ecosystem. It provides domain-specific optimization, resource efficiency analysis, and execution plan generation for optimal AWS EC2 bursting from SLURM clusters.
+
+Part of the **academic research computing trilogy**:
+- **ASBA** (this project): Intelligence Engine - Analysis, optimization, domain detection
+- **[ASBX](https://github.com/scttfrdmn/aws-slurm-burst)**: Execution Engine - High-performance MPI execution on AWS
+- **[ASBB](https://github.com/scttfrdmn/aws-slurm-burst-budget)**: Financial Engine - Real money budget management
 
 ## Overview
 
