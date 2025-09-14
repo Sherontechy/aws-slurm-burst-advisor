@@ -1,0 +1,157 @@
+# GoReleaser configuration for AWS SLURM Burst Advisor
+# See: https://goreleaser.com
+
+version: 1
+
+before:
+  hooks:
+    # Clean and test before building
+    - go mod tidy
+    - go test ./...
+
+builds:
+  - id: asba
+    binary: aws-slurm-burst-advisor
+    main: ./cmd/aws-slurm-burst-advisor
+    env:
+      - CGO_ENABLED=1  # Required for SQLite
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X main.Version={{.Version}}
+      - -X main.BuildTime={{.Date}}
+      - -X main.GitCommit={{.Commit}}
+    flags:
+      - -trimpath
+
+  # Create short alias binary
+  - id: asba-alias
+    binary: asba
+    main: ./cmd/aws-slurm-burst-advisor
+    env:
+      - CGO_ENABLED=1
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X main.Version={{.Version}}
+      - -X main.BuildTime={{.Date}}
+      - -X main.GitCommit={{.Commit}}
+    flags:
+      - -trimpath
+
+archives:
+  - id: default
+    builds:
+      - asba
+      - asba-alias
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - README.md
+      - LICENSE
+      - configs/*.yaml
+      - examples/*.sbatch
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^ci:'
+      - '^refactor:'
+      - merge conflict
+      - Merge pull request
+      - Merge remote-tracking branch
+      - Merge branch
+  groups:
+    - title: 'New Features'
+      regexp: '^.*?feat(\(.+\))??!?:.+$'
+      order: 0
+    - title: 'Bug Fixes'
+      regexp: '^.*?fix(\(.+\))??!?:.+$'
+      order: 1
+    - title: 'Performance Improvements'
+      regexp: '^.*?perf(\(.+\))??!?:.+$'
+      order: 2
+    - title: 'Other Changes'
+      order: 999
+
+release:
+  github:
+    owner: scttfrdmn
+    name: aws-slurm-burst-advisor
+  name_template: "v{{.Version}}"
+  header: |
+    ## AWS SLURM Burst Advisor v{{.Version}}
+
+    **ASBA** - Intelligence Engine for Academic Research Computing
+
+    Part of the comprehensive academic research computing ecosystem:
+    - **ASBA** (this release): Intelligence Engine
+    - **[ASBX](https://github.com/scttfrdmn/aws-slurm-burst)**: Execution Engine
+    - **[ASBB](https://github.com/scttfrdmn/aws-slurm-burst-budget)**: Financial Engine
+
+  footer: |
+    ## Installation
+
+    ### Quick Install
+    ```bash
+    # Download and install
+    curl -sfL https://install.goreleaser.com/github.com/scttfrdmn/aws-slurm-burst-advisor.sh | sh
+
+    # Or download specific release
+    wget https://github.com/scttfrdmn/aws-slurm-burst-advisor/releases/download/v{{.Version}}/aws-slurm-burst-advisor_{{.Os}}_{{.Arch}}.tar.gz
+    ```
+
+    ### Sister Project Integration
+    ```bash
+    # Install complete ecosystem
+    # 1. ASBA (Intelligence)
+    curl -sfL https://install.goreleaser.com/github.com/scttfrdmn/aws-slurm-burst-advisor.sh | sh
+
+    # 2. ASBX (Execution)
+    git clone https://github.com/scttfrdmn/aws-slurm-burst.git && cd aws-slurm-burst && make install
+
+    # 3. ASBB (Financial)
+    git clone https://github.com/scttfrdmn/aws-slurm-burst-budget.git && cd aws-slurm-burst-budget && make install
+    ```
+
+    **Perfect for academic researchers using SLURM clusters with AWS EC2 bursting!**
+
+  extra_files:
+    - glob: ./configs/*.yaml
+    - glob: ./examples/*.sbatch
+    - glob: ./docs/*.md
+
+# Disable Docker and other features not needed for this CLI tool
+dockers:
+  - skip_push: true
+
+universal_binaries:
+  - replace: false

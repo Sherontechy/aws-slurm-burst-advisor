@@ -86,10 +86,14 @@ asba burst --help  # Shows integrated burst command
 Download the latest release for your platform from the [releases page](https://github.com/scttfrdmn/aws-slurm-burst-advisor/releases).
 
 ```bash
-# Linux AMD64
-wget https://github.com/scttfrdmn/aws-slurm-burst-advisor/releases/latest/download/aws-slurm-burst-advisor-linux-amd64.tar.gz
-tar -xzf aws-slurm-burst-advisor-linux-amd64.tar.gz
+# Quick install script (recommended)
+curl -sfL https://github.com/scttfrdmn/aws-slurm-burst-advisor/releases/latest/download/install.sh | sh
+
+# Manual download (Linux AMD64)
+wget https://github.com/scttfrdmn/aws-slurm-burst-advisor/releases/latest/download/aws-slurm-burst-advisor_Linux_x86_64.tar.gz
+tar -xzf aws-slurm-burst-advisor_Linux_x86_64.tar.gz
 sudo cp aws-slurm-burst-advisor /usr/local/bin/
+sudo cp asba /usr/local/bin/  # Short alias included
 ```
 
 ### Quick Start Alias

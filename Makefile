@@ -155,7 +155,19 @@ validate-config:
 	@echo "Validating configuration..."
 	$(BUILD_DIR)/$(BINARY_NAME) --config=$(CONFIG_DIR)/config.yaml --help >/dev/null
 
-# Create release package
+# Release using GoReleaser
+.PHONY: release
+release:
+	@echo "Creating release with GoReleaser..."
+	goreleaser release --clean
+
+# Test release without publishing
+.PHONY: release-test
+release-test:
+	@echo "Testing release with GoReleaser..."
+	goreleaser release --snapshot --clean
+
+# Create release package (legacy - use goreleaser instead)
 .PHONY: package
 package: build-all
 	@echo "Creating release packages..."
@@ -203,5 +215,7 @@ help:
 	@echo "  dev            Run in development mode"
 	@echo "  dev-setup      Set up development environment"
 	@echo "  validate-config Validate configuration files"
-	@echo "  package        Create release packages"
+	@echo "  release        Create release with GoReleaser"
+	@echo "  release-test   Test release build with GoReleaser"
+	@echo "  package        Create release packages (legacy)"
 	@echo "  help           Show this help message"
