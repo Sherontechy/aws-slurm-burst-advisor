@@ -1,5 +1,7 @@
 # AWS SLURM Burst Advisor Configuration
 # Copy this file to ~/.aws-slurm-burst-advisor.yaml or /etc/aws-slurm-burst-advisor/config.yaml
+#
+# Phase 2: Enhanced with domain detection, MPI optimization, and sister project integration
 
 # SLURM Configuration
 slurm_bin_path: "/usr/bin"
@@ -34,6 +36,45 @@ analysis:
   spot_interruption_risk: 0.05   # Expected spot interruption rate
   min_confidence_threshold: 0.6  # Minimum confidence for recommendations
   default_time_value_per_hour: 50.0
+
+# Phase 2: Sister project integration settings
+integration:
+  aws_slurm_burst_enabled: true              # Enable aws-slurm-burst plugin integration
+  execution_plan_output_dir: "/tmp/asba"     # Directory for temporary execution plans
+  domain_detection_enabled: true             # Enable automatic domain detection
+  mpi_optimization_enabled: true             # Enable MPI-specific optimizations
+  performance_learning_enabled: true         # Learn from execution results
+
+# Phase 2: Research domain configuration
+research_domains:
+  auto_detect: true                          # Automatically detect research domains
+  default_domain: "unknown"                 # Fallback when detection fails
+  confidence_threshold: 0.3                 # Minimum confidence for domain classification
+
+  # Domain-specific overrides
+  domain_overrides:
+    climate_modeling:
+      mpi_library_preference: "OpenMPI"
+      network_optimization: "bandwidth"
+      instance_family_preference: ["c5n", "m5n"]
+
+    machine_learning:
+      mpi_library_preference: "NCCL"
+      network_optimization: "latency"
+      instance_family_preference: ["p3dn", "p4d"]
+
+    bioinformatics:
+      mpi_library_preference: "OpenMPI"
+      network_optimization: "minimal"
+      instance_family_preference: ["c5", "r5"]
+
+# Phase 2: Job history and learning settings
+job_history:
+  enabled: true                              # Track personal job history
+  retention_days: 365                       # Keep history for 1 year
+  database_path: "~/.asba/jobs.db"          # SQLite database location
+  pattern_detection_min_jobs: 3             # Minimum jobs needed for pattern detection
+  efficiency_learning_enabled: true         # Learn from resource efficiency patterns
 
 # Local cluster cost model (global parameters)
 local_costs:

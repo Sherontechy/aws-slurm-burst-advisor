@@ -22,13 +22,23 @@ The AWS SLURM Burst Advisor is built specifically for research computing environ
 
 ## Features
 
-- **Batch Script Analysis**: Parse existing SLURM batch scripts to extract job requirements
+### **Core Intelligence**
+- **Personal Job History Analysis**: Learn from your actual resource usage patterns
+- **Research Domain Detection**: Automatic classification (climate modeling, ML, bioinformatics, physics)
+- **CPU-Memory Optimization**: Right-size resources based on efficiency data
+- **AWS Instance Intelligence**: Match workloads to optimal instance families (c5, r5, m5, p3dn)
+
+### **Advanced Integration**
+- **aws-slurm-burst Plugin Integration**: Generate execution plans for seamless workflow
+- **MPI Communication Analysis**: Optimize for nearest-neighbor, all-reduce, embarrassingly parallel patterns
+- **Domain-Specific Optimization**: Research field-specific AWS configurations
+- **Performance Learning**: Continuous improvement from actual execution results
+
+### **Traditional Analysis**
 - **Real-time Queue Analysis**: Query current cluster state and queue conditions
 - **AWS Cost Integration**: Live pricing from AWS APIs with spot price monitoring
 - **Local Cost Modeling**: Realistic cost accounting for local cluster resources
-- **AWS-Optimized Recommendations**: Intelligent burst-to-AWS recommendations based on configurable preferences
 - **Multiple Input Methods**: Command-line parameters, batch files, or positional arguments
-- **AWS-Native**: Built specifically for AWS EC2 and SLURM AWS plugin environments
 
 ## Installation
 
@@ -39,6 +49,20 @@ git clone https://github.com/scttfrdmn/aws-slurm-burst-advisor.git
 cd aws-slurm-burst-advisor
 make build
 sudo make install-system
+```
+
+### Sister Project Integration (Optional)
+
+For integrated burst execution, install the companion plugin:
+
+```bash
+# Install aws-slurm-burst plugin for seamless execution
+git clone https://github.com/scttfrdmn/aws-slurm-burst.git
+cd aws-slurm-burst
+make install
+
+# Verify integration
+asba burst --help  # Shows integrated burst command
 ```
 
 ### Pre-built Binaries
@@ -57,9 +81,12 @@ sudo cp aws-slurm-burst-advisor /usr/local/bin/
 For convenience, the installation creates a short alias `asba`:
 
 ```bash
-# Both commands are equivalent:
+# Traditional analysis
 aws-slurm-burst-advisor job.sbatch gpu-aws
 asba job.sbatch gpu-aws
+
+# NEW: Integrated burst workflow (Phase 2)
+asba burst job.sbatch gpu-aws aws-gpu-[001-004]
 ```
 
 ## Configuration
@@ -137,21 +164,42 @@ partitions:
 
 ### Command-Line Interface
 
+#### **Traditional Analysis**
 ```bash
 # Analyze batch script against AWS burst partition
 asba --batch-file=job.sbatch --burst-partition=gpu-aws
 
-# Manual job specification
+# Manual job specification with optimization
 asba --target-partition=cpu --burst-partition=cpu-aws \
-     --nodes=4 --cpus-per-task=8 --time=2:00:00
+     --nodes=4 --cpus-per-task=8 --time=2:00:00 --optimize
 
-# Quick positional syntax
-asba job.sbatch gpu-aws
+# Historical insights and resource optimization
+asba job.sbatch gpu-aws --with-history --optimize --recommend-instance
+```
 
-# Override partition from batch script
-asba --batch-file=job.sbatch \
-     --target-partition=cpu \
-     --burst-partition=cpu-aws
+#### **NEW: Integrated Burst Workflow (Phase 2)**
+```bash
+# Analyze and execute via aws-slurm-burst plugin
+asba burst training.sbatch gpu-aws aws-gpu-[001-004]
+
+# Dry run to see execution plan
+asba burst job.sbatch cpu-aws aws-cpu-[001-016] --dry-run
+
+# Force specific research domain optimization
+asba burst climate-sim.sbatch cpu-aws aws-cpu-[001-032] --domain=climate_modeling
+```
+
+#### **NEW: Advanced Commands**
+```bash
+# Generate execution plans for aws-slurm-burst
+asba execution-plan job.sbatch gpu-aws --output=plan.json
+
+# Detect research domain for optimization
+asba detect-domain training.sbatch
+
+# View personal job history and patterns
+asba history --patterns
+asba insights
 ```
 
 ### Example Output
@@ -223,35 +271,49 @@ All SLURM directives are automatically extracted and analyzed.
 
 ### **Machine Learning Training**
 ```bash
-# Analyze GPU training job with deadline pressure
+# Traditional analysis
 asba ml_training.sbatch gpu-aws
 
-# Example decision factors:
-# - Local queue: 8 jobs ahead, 6h wait time
-# - AWS p3.8xlarge: $2.40/hour spot, 3min startup
-# - Recommendation: Burst to AWS (saves 5h45m for $12 extra)
-# - Perfect for conference deadline scenarios
+# NEW: Integrated burst with domain optimization
+asba burst ml_training.sbatch gpu-aws aws-gpu-[001-004]
+
+# Domain detection shows:
+# - Detected domain: machine_learning (54% confidence)
+# - Communication pattern: all_reduce (gradient synchronization)
+# - Optimal instances: p3dn.24xlarge (GPU + network optimized)
+# - MPI library: NCCL with ring algorithm
+# - Network: EFA enabled, cluster placement group
 ```
 
 ### **Large-Scale Simulations**
 ```bash
-# CPU-intensive climate simulation with flexible timeline
+# Traditional analysis
 asba --nodes=16 --cpus-per-task=4 --time=12:00:00 \
      --target-partition=cpu --burst-partition=cpu-aws
 
-# Consider: Is 12 extra hours worth $50 savings?
-# Ideal for long-running research with flexible deadlines
+# NEW: Climate modeling with domain optimization
+asba burst climate-model.sbatch cpu-aws aws-hpc-[001-016] --domain=climate_modeling
+
+# Domain optimization provides:
+# - Communication pattern: nearest_neighbor (grid-based)
+# - Optimal instances: c5n.18xlarge (network-optimized)
+# - MPI tuning: OpenMPI with topology-aware placement
+# - Network: EFA enabled, cluster placement for low latency
 ```
 
 ### **Data Processing Pipelines**
 ```bash
-# Memory-intensive genomics processing
+# Traditional genomics analysis
 asba genomics_pipeline.sbatch memory-aws
 
-# Factors in:
-# - Data transfer costs for large datasets
-# - Processing urgency for research timelines
-# - Memory requirements vs AWS instance types
+# NEW: Bioinformatics with domain optimization
+asba burst blast-search.sbatch cpu-aws aws-cpu-[001-008] --domain=bioinformatics
+
+# Domain optimization provides:
+# - Communication pattern: embarrassingly_parallel
+# - Optimal instances: c5.24xlarge, r5.12xlarge (CPU/memory optimized)
+# - MPI tuning: Minimal networking overhead
+# - Network: Spread placement (can use multiple AZs)
 ```
 
 ### **Grant Budget Planning**
@@ -318,6 +380,44 @@ AWS burst budget: $5,000/year
 # - When is time-to-results worth the cost premium?
 ```
 
+## Sister Project Integration
+
+### **aws-slurm-burst Plugin**
+ASBA integrates seamlessly with the [aws-slurm-burst](https://github.com/scttfrdmn/aws-slurm-burst) plugin for optimal execution:
+
+```bash
+# ASBA provides intelligence, aws-slurm-burst provides execution
+asba burst job.sbatch gpu-aws aws-gpu-[001-004]
+
+# Behind the scenes:
+# 1. ASBA analyzes job with domain detection and optimization
+# 2. ASBA generates execution plan with MPI and network optimization
+# 3. aws-slurm-burst executes job with optimal AWS configuration
+# 4. Performance data flows back to ASBA for learning
+```
+
+### **Execution Plan Generation**
+```bash
+# Generate execution plans for the plugin
+asba execution-plan training.sbatch gpu-aws --output=plan.json
+
+# Manual execution via plugin
+aws-slurm-burst resume aws-gpu-[001-004] --execution-plan=plan.json
+```
+
+### **Research Computing Ecosystem**
+```
+┌─────────────────────┐    ┌─────────────────────┐    ┌─────────────────────┐
+│       ASBA          │    │  aws-slurm-burst    │    │ SLURM Budget Bank   │
+│ INTELLIGENCE ENGINE │───►│ EXECUTION ENGINE    │◄──►│ FINANCIAL ENGINE    │
+│                     │    │                     │    │     (Future)        │
+│ • Domain detection  │    │ • MPI execution     │    │ • Real money budgets│
+│ • Resource opt      │    │ • AWS provisioning  │    │ • Account management│
+│ • Execution plans   │    │ • Performance mon   │    │ • Grant compliance  │
+│ • Learning models   │◄──►│ • Cost reporting    │    │ • Spend controls    │
+└─────────────────────┘    └─────────────────────┘    └─────────────────────┘
+```
+
 ## Development
 
 ### Building from Source
@@ -344,16 +444,19 @@ make dev
 
 ```
 aws-slurm-burst-advisor/
-├── cmd/aws-slurm-burst-advisor/    # Main application
+├── cmd/aws-slurm-burst-advisor/    # Main application with Phase 2 commands
 ├── internal/
-│   ├── analyzer/               # Decision engine and cost calculators
+│   ├── analyzer/               # Decision engine, cost calculators, execution planning
 │   ├── aws/                    # AWS pricing and integration
 │   ├── config/                 # Configuration management
-│   ├── slurm/                  # SLURM interface and batch parser
-│   └── types/                  # Core data types
+│   ├── domain/                 # NEW: Research domain detection and MPI optimization
+│   ├── errors/                 # Structured error handling
+│   ├── history/                # NEW: Personal job history tracking (SQLite)
+│   ├── slurm/                  # SLURM interface, batch parser, efficiency data
+│   └── types/                  # Core data types, execution plans, efficiency metrics
 ├── configs/                    # Example configuration files
 ├── examples/                   # Example batch scripts
-├── docs/                       # Documentation
+├── docs/                       # Documentation and optimization guides
 └── build/                      # Build artifacts
 ```
 
