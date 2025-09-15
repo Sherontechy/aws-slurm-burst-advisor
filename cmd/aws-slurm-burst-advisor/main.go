@@ -39,6 +39,12 @@ var (
 	optimize        bool
 	recommendInstance bool
 	historyDays     int
+
+	// Phase 3B: Budget integration flags
+	account         string
+	checkBudget     bool
+	asbbEndpoint    string
+	budgetAware     bool
 )
 
 var rootCmd = &cobra.Command{
@@ -86,6 +92,12 @@ func init() {
 	rootCmd.Flags().BoolVar(&optimize, "optimize", false, "suggest resource optimizations based on history")
 	rootCmd.Flags().BoolVar(&recommendInstance, "recommend-instance", false, "suggest better AWS instance types")
 	rootCmd.Flags().IntVar(&historyDays, "history-days", 90, "days of history to analyze (1-365)")
+
+	// Phase 3B: Budget integration flags
+	rootCmd.Flags().StringVarP(&account, "account", "A", "", "budget account for grant management (e.g., NSF-ABC123)")
+	rootCmd.Flags().BoolVar(&checkBudget, "check-budget", false, "check budget availability before AWS recommendations")
+	rootCmd.Flags().StringVar(&asbbEndpoint, "asbb-endpoint", "http://localhost:8080", "ASBB service endpoint")
+	rootCmd.Flags().BoolVar(&budgetAware, "budget-aware", false, "enable comprehensive budget-aware analysis")
 
 	// Mark required flags
 	rootCmd.MarkFlagRequired("burst-partition")
