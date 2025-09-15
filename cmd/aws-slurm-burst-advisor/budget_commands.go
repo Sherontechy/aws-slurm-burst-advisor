@@ -91,9 +91,17 @@ func runBudgetStatusCommand(cmd *cobra.Command, args []string) {
 
 	// Check if ASBB is available
 	if !client.IsAvailable() {
-		fmt.Printf("Error: ASBB service not available at %s\n", budgetEndpoint)
-		fmt.Printf("Please ensure ASBB (aws-slurm-burst-budget) is running\n")
-		os.Exit(1)
+		fmt.Printf("⚠️  ASBB Service Not Available\n")
+		fmt.Printf("==============================\n")
+		fmt.Printf("ASBB (aws-slurm-burst-budget) not reachable at %s\n\n", budgetEndpoint)
+
+		fmt.Printf("💡 ASBA Standalone Mode\n")
+		fmt.Printf("ASBA provides cost analysis without real-time budget tracking\n")
+		fmt.Printf("Install and configure ASBB for budget-aware recommendations\n\n")
+
+		fmt.Printf("Alternative: Use basic cost estimation\n")
+		fmt.Printf("Command: asba job.sbatch gpu-aws --optimize\n")
+		return
 	}
 
 	// Get budget status

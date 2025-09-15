@@ -21,6 +21,10 @@ var (
 	dryRun             bool
 	domainOverride     string
 	burstNodes         string
+	forceAWS           bool
+	forceLocal         bool
+	skipConfirmation   bool
+	interactive        bool
 )
 
 // burstCmd implements the integrated analyze-and-execute workflow
@@ -85,6 +89,12 @@ func init() {
 	burstCmd.Flags().StringVar(&domainOverride, "domain", "", "override automatic domain detection")
 	burstCmd.Flags().BoolVar(&optimize, "optimize", true, "apply resource optimizations")
 	burstCmd.Flags().BoolVar(&trackHistory, "track-history", true, "collect job history for learning")
+
+	// User override options
+	burstCmd.Flags().BoolVar(&forceAWS, "force-aws", false, "override recommendation and force AWS execution")
+	burstCmd.Flags().BoolVar(&forceLocal, "force-local", false, "override recommendation and force local execution")
+	burstCmd.Flags().BoolVar(&skipConfirmation, "yes", false, "skip confirmation prompts")
+	burstCmd.Flags().BoolVarP(&interactive, "interactive", "i", false, "interactive mode with confirmation prompts")
 
 	// Configure execution-plan command
 	executionPlanCmd.Flags().StringVarP(&outputExecutionPlan, "output", "o", "", "output file for execution plan")
@@ -156,10 +166,32 @@ func runBurstCommand(cmd *cobra.Command, args []string) {
 		displayExecutionPlan(executionPlan)
 
 		if !dryRun {
-			// Execute via aws-slurm-burst plugin
+			// Check if ASBX plugin is available
+			if err := checkASBXAvailability(); err != nil {
+				fmt.Printf("\n⚠️  ASBX Plugin Not Available\n")
+				fmt.Printf("=============================\n")
+				fmt.Printf("ASBA operating in standalone mode\n")
+				fmt.Printf("Install ASBX (aws-slurm-burst) for automatic execution\n\n")
+
+				fmt.Printf("📋 RECOMMENDED MANUAL COMMAND\n")
+				fmt.Printf("==============================\n")
+				fmt.Printf("sbatch --partition=%s %s\n", burstPartition, batchFile)
+
+				if len(executionPlan.OptimizationApplied) > 0 {
+					fmt.Printf("\n💡 Apply these optimizations manually:\n")
+					for _, opt := range executionPlan.OptimizationApplied {
+						fmt.Printf("  • %s\n", opt)
+					}
+				}
+				return
+			}
+
+			// Execute via ASBX plugin
 			if err := executeViaBurstPlugin(executionPlan, burstNodes); err != nil {
-				fmt.Printf("Error: failed to execute via aws-slurm-burst: %v\n", err)
-				os.Exit(1)
+				fmt.Printf("Error: ASBX execution failed: %v\n", err)
+				fmt.Printf("\n🔄 FALLBACK TO MANUAL EXECUTION\n")
+				fmt.Printf("================================\n")
+				fmt.Printf("ASBA recommendation: sbatch --partition=%s %s\n", burstPartition, batchFile)
 			}
 		} else {
 			fmt.Printf("\n[DRY RUN] Would execute: %s\n", executionPlan.GetRecommendedCommand(burstNodes))
@@ -389,4 +421,30 @@ func executeViaBurstPlugin(plan *types.ExecutionPlan, nodeList string) error {
 	os.Remove(planFile)
 
 	return nil
+}
+
+// checkASBXAvailability checks if ASBX plugin is available
+func checkASBXAvailability() error {
+	if _, err := exec.LookPath("aws-slurm-burst"); err != nil {
+		return fmt.Errorf("ASBX (aws-slurm-burst) plugin not found in PATH")
+	}
+	return nil
+}
+
+// displayOptimizationSuggestions shows manual optimization advice
+func displayOptimizationSuggestions(plan *types.ExecutionPlan) {
+	if plan.MPIConfiguration.IsMPIJob {
+		fmt.Printf("  • MPI optimization: Use %s library\n", plan.MPIConfiguration.MPILibrary)
+		if plan.MPIConfiguration.RequiresEFA {
+			fmt.Printf("  • Network: Request EFA-enabled instances\n")
+		}
+	}
+
+	if len(plan.InstanceSpecification.InstanceTypes) > 0 {
+		fmt.Printf("  • Instance types: Prefer %v\n", plan.InstanceSpecification.InstanceTypes)
+	}
+
+	if plan.InstanceSpecification.PurchasingOption == "spot" {
+		fmt.Printf("  • Cost optimization: Use spot instances for additional savings\n")
+	}
 }

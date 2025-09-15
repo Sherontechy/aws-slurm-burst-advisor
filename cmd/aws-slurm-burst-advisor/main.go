@@ -519,16 +519,20 @@ func displayPartitionAnalysis(label string, analysis *types.PartitionAnalysis) {
 }
 
 func displayRecommendation(rec *types.Recommendation) {
-	fmt.Printf("RECOMMENDATION: ")
-	if rec.Preferred == "target" {
-		fmt.Printf("Use Local Cluster\n")
+	fmt.Printf("🎯 ASBA RECOMMENDATION\n")
+	fmt.Printf("=====================\n")
+
+	// Clear recommendation with advisory language
+	fmt.Printf("Advisory: ")
+	if rec.Preferred == types.RecommendationLocal {
+		fmt.Printf("💻 Use Local Cluster (Recommended)\n")
 	} else {
-		fmt.Printf("Burst to AWS\n")
+		fmt.Printf("☁️  Burst to AWS (Recommended)\n")
 	}
 
 	fmt.Printf("├─ Time difference: ")
 	if rec.TimeSavings > 0 {
-		fmt.Printf("+%v (burst saves time)\n", rec.TimeSavings)
+		fmt.Printf("+%v (AWS saves time)\n", rec.TimeSavings)
 	} else if rec.TimeSavings < 0 {
 		fmt.Printf("%v (local is faster)\n", -rec.TimeSavings)
 	} else {
@@ -537,21 +541,21 @@ func displayRecommendation(rec *types.Recommendation) {
 
 	fmt.Printf("├─ Cost difference: ")
 	if rec.CostDifference > 0 {
-		fmt.Printf("+$%.2f (burst costs more)\n", rec.CostDifference)
+		fmt.Printf("+$%.2f (AWS costs more)\n", rec.CostDifference)
 	} else if rec.CostDifference < 0 {
-		fmt.Printf("-$%.2f (burst costs less)\n", -rec.CostDifference)
+		fmt.Printf("-$%.2f (AWS costs less)\n", -rec.CostDifference)
 	} else {
 		fmt.Printf("~$0 (similar cost)\n")
 	}
 
 	if rec.BreakevenTime > 0 {
-		fmt.Printf("├─ Break-even point: %v (if wait time exceeds this, burst is worth it)\n",
+		fmt.Printf("├─ Break-even point: %v (if wait time exceeds this, AWS is worth it)\n",
 			rec.BreakevenTime)
 	} else {
 		fmt.Printf("├─ Break-even point: N/A\n")
 	}
 
-	fmt.Printf("└─ Confidence: %.0f%% (based on current queue state)\n", rec.Confidence*100)
+	fmt.Printf("└─ Confidence: %.0f%% (based on analysis)\n", rec.Confidence*100)
 
 	if len(rec.Reasoning) > 0 {
 		fmt.Printf("\nReasoning:\n")
@@ -559,6 +563,21 @@ func displayRecommendation(rec *types.Recommendation) {
 			fmt.Printf("• %s\n", reason)
 		}
 	}
+
+	// Clear advisory conclusion with user choice
+	fmt.Printf("\n📋 SUGGESTED COMMANDS\n")
+	fmt.Printf("====================\n")
+	if rec.Preferred == types.RecommendationLocal {
+		fmt.Printf("Recommended: sbatch %s\n", getBatchFileName())
+		fmt.Printf("Alternative: asba burst %s %s [node-list]  # Override to use AWS\n",
+			getBatchFileName(), getBurstPartition())
+	} else {
+		fmt.Printf("Recommended: asba burst %s %s [node-list]\n",
+			getBatchFileName(), getBurstPartition())
+		fmt.Printf("Alternative: sbatch %s  # Override to use local cluster\n", getBatchFileName())
+	}
+
+	fmt.Printf("\n💡 This is advisory guidance - you make the final decision!\n")
 }
 
 func parseSlurmTime(timeStr string) (time.Duration, error) {
@@ -722,6 +741,21 @@ func displayDecisionImpact(impact *analyzer.DecisionImpact) {
 	if impact.TimeDifferenceChange != 0 {
 		fmt.Printf("Time difference change: %v\n", impact.TimeDifferenceChange)
 	}
+}
+
+// Helper functions for display
+func getBatchFileName() string {
+	if batchFile != "" {
+		return batchFile
+	}
+	return "job.sbatch"
+}
+
+func getBurstPartition() string {
+	if burstPartition != "" {
+		return burstPartition
+	}
+	return "aws-partition"
 }
 
 func main() {
